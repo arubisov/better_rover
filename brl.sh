@@ -1,60 +1,90 @@
 #!/bin/bash
 #
-# master.sh
-#
-# Master Script for BR-Lite
+# brl.sh (Master Script for BR-Lite)
 #
 # This script, when run from the FIDIM directory, performs the following:
 #   1. Ensures all required scripts have executable permissions.
-#   2. Executes the following scripts in order:
-#         a. installer.sh
-#         b. process_source.sh
-#         c. co_traveler_merge.sh
-#         d. co_traveler_clean.sh
-#         e. co_traveler_analysis.py
-#   3. Prompts the user for maintenance tasks:
-#         a. Archive Data – moves files older than a user-specified cutoff date from
-#            Input_Data, Processing, and Outputs into an Archive directory.
-#         b. Ragnarok – (if confirmed) deletes all files and directories in BR-Lite except
-#            the FIDIM directory.
+#   2. Optionally runs first-time installation tasks.
+#   3. Executes:
+#         a. process_source.sh
+#         b. co_traveler_merge.sh
+#         c. co_traveler_analysis.py
+#   4. Prompts the user for maintenance tasks:
+#         - Archive Data: moves files older than a user-specified cutoff date.
+#         - Ragnarok: (if confirmed) deletes all files and directories in BR-Lite except FIDIM.
 #
-# Ensure this script is run from the FIDIM directory.
+# Note: The cleaning step (co_traveler_clean.sh) has been removed.
 #
 
-# List of required scripts (assumed to be in the current directory)
-SCRIPTS=("installer.sh" "process_source.sh" "co_traveler_merge.sh" "co_traveler_clean.sh" "co_traveler_analysis.py")
+# Determine the BR-Lite base directory (parent of FIDIM)
+BASE_DIR="$(realpath "$(dirname "$0")/../")"
+echo "BR-Lite base directory: $BASE_DIR"
 
+# Recursively update permissions for all .sh and .py files in the BR-Lite directory.
+echo "Updating execute permissions for all .sh and .py files in the BR-Lite directory..."
+find "$BASE_DIR" -type f \( -iname "*.sh" -o -iname "*.py" \) -exec chmod +x {} \;
+echo "All script permissions updated."
+
+# Prompt to run first time installation tasks
+read -p "Would you like to run first time installation tasks? (y/n): " install_choice
+if [[ "$install_choice" =~ ^[Yy] ]]; then
+    echo "Starting BR-Lite Installer..."
+    ./installer.sh || { echo "Installer failed. Exiting."; exit 1; }
+else
+    echo "Installation tasks skipped."
+fi
+
+# Check that required scripts exist in the current (FIDIM) directory.
+SCRIPTS=("installer.sh" "process_source.sh" "co_traveler_merge.sh" "co_traveler_analysis.py")
 echo "Checking script permissions..."
-
-# Loop over each script to ensure it is executable
 for script in "${SCRIPTS[@]}"; do
     if [ -f "$script" ]; then
         chmod +x "$script"
         echo "Ensured $script is executable."
     else
-        echo "Error: $script not found in the current directory. Exiting."
+        echo "Error: $script not found in the current directory. Confirm you have downloaded all BR-Lite files. Exiting."
         exit 1
     fi
 done
-
 echo "All required scripts are present and executable."
 
-# Execute the scripts in order
+# Ensure Whitelist.csv exists in the BR-Lite base directory
+WHITELIST_FILE="$BASE_DIR/Whitelist.csv"
 
-echo "Starting BR-Lite Installer..."
-./installer.sh || { echo "Installer failed. Exiting."; exit 1; }
+if [ ! -f "$WHITELIST_FILE" ]; then
+    echo "Creating Whitelist.csv with default headers..."
+    echo "Device Name,Device Type,Wifi MAC Address,Bluetooth MAC Address,Randomized Wifi,Randomized BT" > "$WHITELIST_FILE"
+else
+    echo "Whitelist.csv already exists. No changes made."
+fi
 
-echo "Processing source data..."
+# Prompt for data analysis
+read -p "Have you uploaded your data for analysis? Ensure your data is in the appropriate directory in the Input_Data folder. (y/n): " analyze_choice
+if [[ ! "$analyze_choice" =~ ^[Yy] ]]; then
+    echo "Data analysis skipped. Exiting master script."
+    exit 0
+fi
+
+echo "Extracting data from Kimset and Airodump files"
 ./process_source.sh || { echo "Source processing failed. Exiting."; exit 1; }
 
 echo "Merging processed data for Co Traveler Analysis..."
 ./co_traveler_merge.sh || { echo "Merging failed. Exiting."; exit 1; }
 
-echo "Cleaning merged data..."
-./co_traveler_clean.sh || { echo "Cleaning failed. Exiting."; exit 1; }
-
 echo "Analyzing Co Traveler data and generating maps..."
 ./co_traveler_analysis.py || { echo "Analysis failed. Exiting."; exit 1; }
+
+echo "Aggregating static signals..."
+./static_aggregate.py || { echo "Static signals aggregation failed. Exiting."; exit 1; }
+
+echo "Generating static signals map..."
+./static_signals_map.py || { echo "Static signals map generation failed. Exiting."; exit 1; }
+
+echo "Running Flagged Signal Analysis"
+./flagged_signals_analysis.py || { echo "Flagged Signal Analysis failed. Exiting."; exit 1; }
+
+echo "Bulk Analysis complete, considering Targeted Analytical Options"
+./targeted_analytics.py || { echo "Targeted Analysis failed. Exiting."; exit 1; }
 
 echo "BR-Lite main tasks complete."
 
@@ -63,55 +93,42 @@ echo "BR-Lite main tasks complete."
 # -----------------------------
 read -p "Would you like to complete maintenance tasks? (y/n): " maint_choice
 if [[ "$maint_choice" =~ ^[Nn] ]]; then
-    echo "Maintenance tasks skipped. Exiting master script."
+    echo "Maintenance tasks skipped. Stay safe out there - DET 2324."
     exit 0
 fi
 
-# Set the BR-Lite base directory (parent of FIDIM)
-BASE_DIR="$(dirname "$(dirname "$0")")"
-
-# ---- Archive Data Task ----
+# Archive Data Task
 read -p "Would you like to archive data? (y/n): " archive_choice
 if [[ "$archive_choice" =~ ^[Yy] ]]; then
     read -p "Enter cutoff date (DD-MM-YYYY) to archive all files older than or equal to that date: " cutoff_date
     echo "Archiving files older than or equal to $cutoff_date..."
-
-    # Create Archive directory in the BR-Lite base directory if not exists
     ARCHIVE_DIR="$BASE_DIR/Archive"
     mkdir -p "$ARCHIVE_DIR"
-
-    # Define directories to archive from
     DIRS_TO_ARCHIVE=("$BASE_DIR/Input_Data" "$BASE_DIR/Processing" "$BASE_DIR/Outputs")
-
     for dir in "${DIRS_TO_ARCHIVE[@]}"; do
         if [ -d "$dir" ]; then
             echo "Archiving from $dir..."
-            # Find and move files (using modification time) older than or equal to cutoff_date.
-            # This uses GNU find's -newermt. Files NOT newer than cutoff_date will be moved.
             find "$dir" -type f ! -newermt "$cutoff_date" -exec mv {} "$ARCHIVE_DIR" \;
         fi
     done
-
     echo "Data archiving complete."
 else
     echo "Data archiving skipped."
 fi
 
-# ---- Ragnarok Task ----
-read -p "Do you want to initiate Ragnarok and delete all files (except the FIDIM directory)? (y/n): " ragnarok_choice
+# Ragnarok Task
+read -p "Do you want to initiate Ragnarok to delete all analyzed data? (y/n): " ragnarok_choice
 if [[ "$ragnarok_choice" =~ ^[Yy] ]]; then
-    read -p "WARNING: This action will delete ALL files and directories in BR-Lite except the FIDIM directory. Are you absolutely sure? (y/n): " confirm_ragnarok
+    read -p "WARNING: This action will delete ALL files and directories outside of Input_Data. You will have to re-run installer and analysis processes? (y/n): " confirm_ragnarok
     if [[ "$confirm_ragnarok" =~ ^[Yy] ]]; then
         echo "Initiating Ragnarok..."
-        # Loop through all items in the BR-Lite base directory.
-        for item in "$BASE_DIR"/*; do
-            base_item=$(basename "$item")
-            # Do not delete the FIDIM directory.
-            if [ "$base_item" != "FIDIM" ]; then
-                echo "Deleting $item..."
-                sudo rm -rf "$item"
-            fi
-        done
+for item in "$BASE_DIR"/*; do
+    base_item=$(basename "$item")
+    if [ "$base_item" != "FIDIM" ] && [ "$base_item" != "Input_Data" ]; then
+        echo "Deleting $item..."
+        sudo rm -rf "$item"
+    fi
+done
         echo "Ragnarok complete. All files except FIDIM have been deleted."
     else
         echo "Ragnarok canceled."
@@ -120,5 +137,5 @@ else
     echo "Ragnarok skipped."
 fi
 
-echo "Maintenance tasks complete. Exiting master script."
+echo "Maintenance tasks complete. Stay safe out there - DET 2324"
 exit 0
