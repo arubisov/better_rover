@@ -20,11 +20,11 @@
 # This installer is located in X/BR-Lite/FIDIM/
 # so the BR-Lite base directory is one level up from FIDIM.
 
-# Determine the BR-Lite base directory (i.e. parent of FIDIM)
-BASE_DIR="$(dirname "$(dirname "$0")")"
+# Use realpath to determine the base directory robustly.
+BASE_DIR="$(realpath "$(dirname "$0")/../")"
 echo "BR-Lite base directory: $BASE_DIR"
 
-# Define the directories to check/create
+# Define the directories to check/create (relative to BASE_DIR)
 DIRECTORIES=(
     "$BASE_DIR/Input_Data/Kismetdb"
     "$BASE_DIR/Input_Data/Airodump_Logs"
@@ -35,7 +35,7 @@ DIRECTORIES=(
     "$BASE_DIR/Outputs"
 )
 
-# Check for existence and create missing directories
+# Check for existence and create missing directories in the BR-Lite base directory.
 for DIR in "${DIRECTORIES[@]}"; do
     if [ ! -d "$DIR" ]; then
         echo "Creating directory: $DIR"
@@ -72,12 +72,16 @@ for pkg in "${SYS_PACKAGES[@]}"; do
 done
 
 # -----------------------------
-# Install required Python packages via pip3
+# Install required Python packages via apt (or pip, as preferred)
 # -----------------------------
 echo "Installing/updating required Python packages (pandas, numpy, folium)..."
-pip3 install --upgrade pip
-pip3 install pandas numpy folium
+sudo apt install python3-pandas python3-numpy python3-folium -y
 
+echo "Installing JSON dependencies"
+sudo apt install jq -y
+
+echo "Autoremoving non-essential dependencies..."
+sudo apt autoremove
 # -----------------------------
 # Update permissions for scripts in the FIDIM directory
 # -----------------------------
