@@ -13,7 +13,7 @@ This script analyzes the merged data produced by the merge process and:
   3. Groups records by unique signals (using mac and ssid, with blank ssid replaced by "unk") and collects
      the unique source files for each group.
   4. Classifies each group:
-       - Potential Co Traveler: if any two records are ≥1000m apart.
+       - Potential co-traveler: if any two records are ≥1000m apart.
        - Potential Static: if all records are within 300m of each other.
        - Otherwise, Unknown.
      The earliest and latest time values in each group are recorded as first seen and last seen.
@@ -21,8 +21,8 @@ This script analyzes the merged data produced by the merge process and:
   6. Saves a categorized CSV file (with MAC, SSID, AUTHMODE, TIME, CHANNEL, RSSI, LATITUDE, LONGITUDE, TYPE, SOURCE FILE,
      CLASSIFICATION, FIRST SEEN, LAST SEEN, and aggregated SOURCE FILE(S) for each signal) in the outputs folder,
      with all column headers in ALL CAPS.
-  7. Generates an interactive HTML map for co traveler data:
-       - For each potential co traveler group, local clustering is performed (merging points within 50m into a single aggregated marker).
+  7. Generates an interactive HTML map for co-traveler data:
+       - For each potential co-traveler group, local clustering is performed (merging points within 50m into a single aggregated marker).
        - Aggregated markers are grouped into layers based on their "FURTHEST DETECTION DISTANCE" bin:
          1-5km, 5-10km, 10-15km, 15-20km, and >20km.
        - Each bin is assigned a discrete color (green, blue, purple, orange, red, respectively), which is used for the markers.
@@ -137,7 +137,7 @@ OUTPUTS_DIR = os.path.join(BASE_DIR, "Outputs")
 # -----------------------------
 # Step 1: Prompt for date range.
 # -----------------------------
-use_range = input("Do you wish to specify a date range for Co Traveler Analysis? (y/n): ").strip().lower()
+use_range = input("Do you wish to specify a date range for co-traveler Analysis? (y/n): ").strip().lower()
 date_filter = False
 if use_range == 'y':
     start_input = input("Enter beginning date (DD-MM-YYYY): ").strip()
@@ -272,7 +272,7 @@ for (mac, ssid), group in df.groupby(["mac", "ssid_filled"]):
                     max_dist = d
         group_max = max_dist
         if is_cotraveler:
-            classification = "co traveler"
+            classification = "co-traveler"
         elif max_dist <= 300:
             classification = "static"
         else:
@@ -288,7 +288,7 @@ for (mac, ssid), group in df.groupby(["mac", "ssid_filled"]):
         "source files": source_files,
         "max_dist": group_max
     })
-    if classification == "co traveler":
+    if classification == "co-traveler":
         cotraveler_groups[(mac, ssid)] = {"records": records, "max_dist": group_max}
     elif classification == "static":
         static_groups[(mac, ssid)] = records
@@ -337,11 +337,11 @@ categorized.to_csv(output_csv, index=False)
 print(f"Categorized signals saved to {output_csv}")
 
 # -----------------------------
-# Step 8: Generate interactive HTML map for Co Traveler groups.
+# Step 8: Generate interactive HTML map for co-traveler groups.
 # -----------------------------
 arcgis_tiles = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 
-# First pass: For each co traveler group, perform local clustering (points within 50m) and aggregate markers.
+# First pass: For each co-traveler group, perform local clustering (points within 50m) and aggregate markers.
 aggregated_markers = []
 for key, group_info in cotraveler_groups.items():
     mac, ssid = key
@@ -395,6 +395,6 @@ for bin_label, markers in bins_agg.items():
 LayerControl().add_to(co_map)
 co_map_file = os.path.join(OUTPUTS_DIR, "COTRAVELER_MAP.html")
 co_map.save(co_map_file)
-print(f"Co Traveler map saved to {co_map_file}")
+print(f"co-traveler map saved to {co_map_file}")
 
-print("Co Traveler Analysis complete.")
+print("co-traveler Analysis complete.")

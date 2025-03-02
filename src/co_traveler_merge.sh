@@ -4,7 +4,7 @@
 #
 # This script merges *_wigled.csv files (located in subdirectories of Processing/Kismet),
 # Airodump logs (from Input_Data/Airodump_Logs), and JSON files (also in subdirectories of Processing/Kismet)
-# for Co Traveler Analysis. It allows the user to specify a desired date range (format: DD-MM-YYYY).
+# for co-traveler Analysis. It allows the user to specify a desired date range (format: DD-MM-YYYY).
 #
 # The merged output is saved to the Processing/Merges folder and Outputs folder.
 
@@ -13,7 +13,7 @@ echo "BR-Lite base directory: $BASE_DIR"
 
 WIGLED_DIR="$BASE_DIR/Processing/Kismet"
 AIRODUMP_DIR="$BASE_DIR/Input_Data/Airodump_Logs"
-KISMET_JSON_DIR="$BASE_DIR/Processing/Kismet"
+# KISMET_JSON_DIR="$BASE_DIR/Processing/Kismet"
 MERGES_DIR="$BASE_DIR/Processing/Merges"
 OUTPUT_DIR="$BASE_DIR/Outputs"
 # Explain the processing for the user

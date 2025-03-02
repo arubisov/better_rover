@@ -31,9 +31,12 @@
 #   - Airodump CSV files have a header with a "LocalTime" column in "YYYY-MM-DD HH:MM:SS" format.
 #
 
-# Set the BR-Lite base directory as the parent of FIDIM using an absolute path.
-BASE_DIR="$(realpath "$(dirname "$0")/../")"
-echo "BR-Lite base directory: $BASE_DIR"
+# load vars from config
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+CONFIG_PATH="$SCRIPT_DIR/../config.yaml"
+for key in $(yq e 'keys | .[]' $CONFIG_PATH); do
+  export "$key=$(yq e ".$key" $CONFIG_PATH)"
+done
 
 # 1. Update permissions for all files in the Input_Data directory
 echo "Updating permissions in Input_Data..."
@@ -47,17 +50,6 @@ if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
     exit 1
 fi
 
-# 3. Check for existing processing outputs in Kismet and Airodump directories
-KISMET_PROC_DIR="$BASE_DIR/Processing/Kismet"
-AIRODUMP_PROC_DIR="$BASE_DIR/Processing/Airodump"
-existing_outputs=false
-
-if [ -d "$KISMET_PROC_DIR" ] && [ "$(ls -A "$KISMET_PROC_DIR")" ]; then
-    existing_outputs=true
-fi
-if [ -d "$AIRODUMP_PROC_DIR" ] && [ "$(ls -A "$AIRODUMP_PROC_DIR")" ]; then
-    existing_outputs=true
-fi
 
 # Determine conversion mode:
 # If there are existing outputs, prompt the user:

@@ -5,7 +5,7 @@ Flagged Signals Analysis
 This script searches exclusively across Wigled_Merged CSV files (from wigled sources)
 located in the Processing/Merges directory. It:
   1) Identifies unique MAC addresses that are detected at locations at least 300m apart,
-     flagging them as Potential Co Travelers.
+     flagging them as Potential co-travelers.
   2) Computes a "Confidence" value (0–100%) based on:
        a) Number of detections (more detections increase confidence)
        b) Spatial spread (maximum pairwise distance, normalized over the range 300m to 10000m)
@@ -165,7 +165,7 @@ def main():
         })
 
     if not results:
-        print("No potential co traveler signals flagged based on the 300m threshold.")
+        print("No potential co-traveler signals flagged based on the 300m threshold.")
         sys.exit(0)
 
     # Create a DataFrame from the results and sort by confidence (highest first).
