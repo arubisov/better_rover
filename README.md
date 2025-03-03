@@ -14,7 +14,7 @@ BRL is run by executing a master script (brl.sh) which controls the phasing of s
 | ---- | ----------- | ------ |
 | setup.sh | Verifies required directory structure for input data, intermediate processed data, and output data; installs package dependencies; updates permissions for all .sh and .py scripts permissions | Required directory structure. |
 | brl.sh | The master script. Prompts user to execute or skip each subprocess, and runs maintenance tasks (archiving data to remove it from the workflow; destruction to delete everything but source data) | ??? |
-| process_source.sh | Updates input data file permissions, prompts for *sensor-YYYY-MM-DD* naming convention, checks for existing processing output (and optionally skips or re-processes), processes any **.kismet** databases (converting them to WigleCSV, pcapNG, JSON, and ekJSON) and processes **Airodump .log.csv** files (finding earliest and latest timestamps and appending that range to the filename). | Processed results are saved in `Processing/` subdirectories, indexed by sensor and timestamps for easier downstream analysis. |
+| process_source.sh | Updates input data file permissions, checks for existing processing output (and optionally skips or re-processes), processes any **.kismet** databases (converting them to WigleCSV, pcapNG, JSON, and ekJSON) and processes **Airodump .log.csv** files (finding earliest and latest timestamps and appending that range to the filename). | Processed results are saved in `Processing/` subdirectories, indexed by sensor and timestamps for easier downstream analysis. |
 
 ## Not yet reviewed
 
