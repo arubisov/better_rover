@@ -39,17 +39,15 @@ for key in $(yq e 'keys | .[]' $CONFIG_PATH); do
 done
 
 # 1. Update permissions for all files in the Input_Data directory
-echo "Updating permissions in Input_Data..."
-sudo chmod -R u+rw "$BASE_DIR/Input_Data"
+echo "Updating permissions in data/input/..."
+sudo chmod -R u+rw $INPUT_KISMET_DIR $INPUT_AIRODUMP_DIR
 
-# 2. Confirm naming convention compliance before proceeding.
-read -p "Confirm all source data files conform to a SENSOR_NAME-YYYY-MM-DD format for both Airodump and Kismet files. Failure to properly tag source data file by collected sensors will produce unintelligible analytics.
-Confirmed? y/n: " confirm
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    echo "Exiting BR-Lite. When ready, restart the program."
-    exit 1
+# 2. check whether processed output already exists (dirs are non-empty)
+existing_outputs=false
+if [ -d "$PROCESSED_KISMET_DIR" ] && [ -n "$(ls -A "$PROCESSED_KISMET_DIR" 2>/dev/null)" ] ||
+   [ -d "$PROCESSED_AIRODUMP_DIR" ] && [ -n "$(ls -A "$PROCESSED_AIRODUMP_DIR" 2>/dev/null)" ]; then
+    existing_outputs=true
 fi
-
 
 # Determine conversion mode:
 # If there are existing outputs, prompt the user:
