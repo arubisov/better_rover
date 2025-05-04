@@ -34,9 +34,13 @@ echo "Ensuring all .sh and .py scripts are executable..."
 find ./src -maxdepth 1 -type f \( -name "*.sh" -o -name "*.py" \) -exec chmod +x {} +
 
 echo "Creating config.yaml..."
-echo "INPUT_KISMET_DIR: $(pwd)/data/input/kismet" > config.yaml
+echo "BASE_DIR: $(pwd)" > config.yaml
+echo "DATA_DIR: $(pwd)/data" >> config.yaml
+echo "ARCHIVE_DIR: $(pwd)/data/archive" >> config.yaml
+echo "INPUT_DIR: $(pwd)/data/input" >> config.yaml
+echo "INPUT_KISMET_DIR: $(pwd)/data/input/kismet" >> config.yaml
 echo "INPUT_AIRODUMP_DIR: $(pwd)/data/input/airodump" >> config.yaml
-echo "INPUT_ARCHIVE_DIR: $(pwd)/data/input/archive" >> config.yaml
+echo "PROCESSED_DIR: $(pwd)/data/processed" >> config.yaml
 echo "PROCESSED_KISMET_DIR: $(pwd)/data/processed/kismet" >> config.yaml
 echo "PROCESSED_AIRODUMP_DIR: $(pwd)/data/processed/airodump" >> config.yaml
 echo "PROCESSED_MERGES_DIR: $(pwd)/data/processed/merges" >> config.yaml
