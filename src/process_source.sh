@@ -16,7 +16,7 @@
 #       - For each .kismet file in Input_Data/Kismetdb,
 #         creates a subdirectory in Processing/Kismet named after the file (without extension)
 #       - Converts the .kismet file into three outputs:
-#           a) WigleCSV output (appending "_wigled.csv" to the base filename)
+#           a) WiGLE CSV output (appending "_wigle.csv" to the base filename)
 #           b) Packet data CSV output (appending "_packetdata.csv" to the base filename)
 #           c) pcap file (appending "_pcap.pcapng" to the base filename)
 #
@@ -38,23 +38,13 @@ for key in $(yq e 'keys | .[]' $CONFIG_PATH); do
     export "$key=$(yq e ".$key" $CONFIG_PATH)"
 done
 
-# helper: yes/no prompt
-prompt_confirm() {
-  local prompt="${1:-Are you sure?}" default="${2:-n}" ans
-  while true; do
-    read -rp "$prompt [y/N]: " ans
-    ans="${ans:-$default}"
-    case "$ans" in
-      [Yy]|[Yy][Ee][Ss]) return 0 ;;
-      [Nn]|[Nn][Oo])     return 1 ;;
-      *) echo "Please answer yes or no." ;;
-    esac
-  done
-}
+source $(dirname "$0")/utils.sh
 
 # 1. Update permissions for all files in the Input_Data directory
-echo "Updating permissions in data/input/..."
-sudo chmod -R u+rw $INPUT_KISMET_DIR $INPUT_AIRODUMP_DIR
+if find "$INPUT_KISMET_DIR" "$INPUT_AIRODUMP_DIR" ! -perm -u=rw | grep -q .; then
+    echo "Adding read/write permissions in data/input/..."
+    sudo chmod -R u+rw "$INPUT_KISMET_DIR" "$INPUT_AIRODUMP_DIR"
+fi
 
 # 2. check whether processed output already exists (dirs are non-empty)
 # If there are existing outputs, prompt the user:
@@ -62,12 +52,11 @@ sudo chmod -R u+rw $INPUT_KISMET_DIR $INPUT_AIRODUMP_DIR
 #   - "n": only process missing outputs.
 
 # default vals
-existing_outputs=false
 reprocess_files=true
 
-if [ -d "$PROCESSED_KISMET_DIR" ] && [ -n "$(ls -A "$PROCESSED_KISMET_DIR" 2>/dev/null)" ] ||
-    [ -d "$PROCESSED_AIRODUMP_DIR" ] && [ -n "$(ls -A "$PROCESSED_AIRODUMP_DIR" 2>/dev/null)" ]; then
-    if prompt_confirm "Existing outputs found. Reprocess and overwrite?"; then
+if { [ -d "$PROCESSED_KISMET_DIR" ] && [ -n "$(ls -A "$PROCESSED_KISMET_DIR" 2>/dev/null)" ]; } ||
+    { [ -d "$PROCESSED_AIRODUMP_DIR" ] && [ -n "$(ls -A "$PROCESSED_AIRODUMP_DIR" 2>/dev/null)" ]; }; then
+    if prompt_confirm "Existing outputs found. Reprocess and overwrite?" "N"; then
         reprocess_files=true
     else
         reprocess_files=false
@@ -84,7 +73,7 @@ if [ -d "$INPUT_KISMET_DIR" ]; then
             mkdir -p "$dest_dir"
 
             # Define expected output filenames
-            output1="$dest_dir/${base}_wigled.csv"
+            output1="$dest_dir/${base}_wigle.csv"
             output2="$dest_dir/${base}_packetdata.ek.json"
             output3="$dest_dir/${base}_pcap.pcapng"
             output4="$dest_dir/${base}_packetdata.json"
@@ -96,7 +85,7 @@ if [ -d "$INPUT_KISMET_DIR" ]; then
                 echo "Converting to wiglecsv: $output1"
                 sudo kismetdb_to_wiglecsv --force --in "$kismet_file" --out "$output1"
             else
-                echo "Skipping wigle conversion for $kismet_file as output $output1 already exists."
+                echo "File found: $output1. Skipping wigle conversion."
             fi
 
             # Output 2: Extract packet data to EKJSON (ELK Stack Usable)
@@ -104,7 +93,7 @@ if [ -d "$INPUT_KISMET_DIR" ]; then
                 echo "Converting unified Kismet files into JSON formats: $output2"
                 sudo kismetdb_dump_devices -ekjson --force --in "$kismet_file" --out "$output2"
             else
-                echo "Skipping packet data extraction for $kismet_file as output $output2 already exists."
+                echo "File found: $output2. Skipping packet data extraction to EK."
             fi
 
             # Output 3: Convert to pcap (pcapng format)
@@ -112,13 +101,15 @@ if [ -d "$INPUT_KISMET_DIR" ]; then
                 echo "Converting to pcap: $output3"
                 sudo kismetdb_to_pcap --force --in "$kismet_file" --out "$output3"
             else
-                echo "Skipping pcap conversion for $kismet_file as output $output3 already exists."
+                echo "File found: $output3. Skipping pcap conversion."
             fi
 
             # Output 4: Extract packet data to JSON
             if $reprocess_files || [ ! -f "$output4" ]; then
                 echo "Converting unified Kismet files into JSON formats: $output4"
                 sudo kismetdb_dump_devices --force --in "$kismet_file" --out "$output4"
+            else
+                echo "File found: $output4. Skipping packet data extraction."
             fi
 
             echo "Finished processing Kismet file: $kismet_file"
