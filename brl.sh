@@ -21,33 +21,21 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+source $(dirname "$0")/src/utils.sh
+
 # load vars from config
 for key in $(yq e 'keys | .[]' config.yaml); do
   export "$key=$(yq e ".$key" config.yaml)"
 done
 
-# helper: yes/no prompt
-prompt_confirm() {
-  local prompt="${1:-Are you sure?}" default="${2:-n}" ans
-  while true; do
-    read -rp "$prompt [y/N]: " ans
-    ans="${ans:-$default}"
-    case "$ans" in
-      [Yy]|[Yy][Ee][Ss]) return 0 ;;
-      [Nn]|[Nn][Oo])     return 1 ;;
-      *) echo "Please answer yes or no." ;;
-    esac
-  done
-}
-
 # Prompt for data analysis
-if prompt_confirm "Perform analysis? Required datasets must be in the appropriate data subdirectories."; then
+if prompt_confirm "Perform analysis? Required datasets must be in the appropriate data subdirectories." "Y"; then
 
     echo "Extracting data from Kimset and Airodump files"
     ./src/process_source.sh || { echo "Source processing failed. Exiting."; exit 1; }
 
-    # echo "Merging processed data for co-traveler Analysis..."
-    # ./src/co_traveler_merge.sh || { echo "Merging failed. Exiting."; exit 1; }
+    echo "Merging processed data for co-traveler Analysis..."
+    ./src/co_traveler_merge.sh || { echo "Merging failed. Exiting."; exit 1; }
 
     # echo "Analyzing co-traveler data and generating maps..."
     # ./src/co_traveler_analysis.py || { echo "Analysis failed. Exiting."; exit 1; }
