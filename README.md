@@ -35,7 +35,8 @@ BRL is run by executing a master script (brl.sh) which controls the phasing of s
 | brl.sh | The master script. Prompts user to execute or skip each subprocess, and runs maintenance tasks (archiving data to remove it from the workflow; destruction to delete everything but source data) | ??? |
 | process_source.sh | Unpacks each `data/input/kismet/*.kismet` database into WiGLE CSV, pcapNG, JSON, and ekJSON formats; renames each `data/input/airodump/*.log.csv` file based on earliest and latest timestamps per file. | Saved to `data/processed/` subdirectories, indexed by sensor and timestamps for easier downstream analysis. |
 | co_traveler_merge.sh | Concatenates all unpacked WiGLE CSV files into a single merged WiGLE CSV file; concatenates all renamed airodump files into a single airodump file. | Persisted to `data/processed/merged/wigle_*.csv` and `data/processed/merged/airodump_*.csv` |
-| 
+| co_traveler_analysis.py | Load `data/processed/merged/wigle_*.csv` into a single DataFrame, normalize headers and data, and drop any rows that match `whitelist.csv`. Perform the co-traveler analysis: group by (MAC, SSID) and compute every pairwise haversine distance. Each grouping is classified into one of three categories: **co-traveler** (any two detections >= 1000m apart), **static** (all detections <= 300m apart), or **unknown**. Static groups get assigned a best-guess location based on the RSSI-weighted average of its lat/lon points. Build and save a map of all co-traveler groups, clustering them by nearby points (to reduce noise) and colour-coding by binning their maximum travel distance. | `data/output/categorized_signals.csv` where each row is a unique signal with classification, first/last seen, and best-guess coordinates; `data/output/cotraveler_map.html` for the co-traveler signals. |
+
 
 ## Not yet reviewed
 
