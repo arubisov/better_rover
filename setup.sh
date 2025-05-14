@@ -43,7 +43,7 @@ echo "INPUT_AIRODUMP_DIR: $(pwd)/data/input/airodump" >> config.yaml
 echo "PROCESSED_DIR: $(pwd)/data/processed" >> config.yaml
 echo "PROCESSED_KISMET_DIR: $(pwd)/data/processed/kismet" >> config.yaml
 echo "PROCESSED_AIRODUMP_DIR: $(pwd)/data/processed/airodump" >> config.yaml
-echo "PROCESSED_MERGES_DIR: $(pwd)/data/processed/merges" >> config.yaml
+echo "PROCESSED_MERGED_DIR: $(pwd)/data/processed/merges" >> config.yaml
 echo "OUTPUT_DIR: $(pwd)/data/output" >> config.yaml
 echo "WHITELIST_FILE: $(pwd)/whitelist.csv" >> config.yaml
 
@@ -58,7 +58,7 @@ DIRECTORIES=(
     $INPUT_ARCHIVE_DIR
     $PROCESSED_KISMET_DIR
     $PROCESSED_AIRODUMP_DIR
-    $PROCESSED_MERGES_DIR
+    $PROCESSED_MERGED_DIR
     $OUTPUT_DIR
 )
 
