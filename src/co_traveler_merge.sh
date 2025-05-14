@@ -7,11 +7,12 @@
 # This script iterates over the files in the input/ subfolders and concatenates individual:
 #   - *_wigle.csv files
 #   - Airodump logs
-#   - JSON files
 # 
-# The user can specify a desired date range (format: DD-MM-YYYY).
+# BROKEN: The user can specify a desired date range (format: DD-MM-YYYY). 
 #
-# The merged output is saved to the processed/ and outputs/ folders.
+# The merged output is saved to the processed/merged/ folder. The intent is to allow users to 
+# create a database of multi-sensor data from across timeframes and allow users to search by 
+# timeframe instead of by aggregate
 
 # load vars from config
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -29,6 +30,8 @@ echo "***Better Rover -Lite will use these merged files as databases for downstr
 echo "***BR-L can constrain this process to a user-specified date range."
 echo "***This is useful if you'd like to constrain future processes to a specific range as opposed to using aggregate data."
 echo "***You can re-run BR-Lite to create multiple time-frames for analysis if you don't want to specify it now."
+
+# TK: selected date range currently only affects labeling, doesn't actually affect selection of rows
 # Prompt for date range
 if prompt_confirm "Would you like to specify a date range?" "N"; then
     read -p "Enter start date (DD-MM-YYYY): " start_input
@@ -42,7 +45,7 @@ else
 fi
 
 # concatenate individual WiGLE CSV files
-OUTPUT_WIGLE_FILE="$PROCESSED_MERGES_DIR/WiGLE_${RANGE_LABEL}.csv"
+OUTPUT_WIGLE_FILE="$PROCESSED_MERGED_DIR/wigle_${RANGE_LABEL}.csv"
 echo "Merging WiGLE CSV files..."
 
 # Get the first wigle file
@@ -80,6 +83,8 @@ else
     for i in "${!header_fields[@]}"; do
         field="${header_fields[$i]}"
         # Omit columns named exactly "Latitude Error" or "Longitude Error"
+        # this is mostly due to the fact that we haven't determined how to employ airodump-ng 
+        # with gps receivers for our survey teams so these columns only create extra noise
         if [[ "$field" == "Latitude Error" || "$field" == "Longitude Error" ]]; then
             continue
         else
@@ -91,7 +96,7 @@ else
 
     # Write the new header with an extra "Source File" column
     new_header_line=$(IFS=, ; echo "${new_header[*]}")
-    OUTPUT_AIRODUMP_FILE="$PROCESSED_MERGES_DIR/Airodump_Merged_${RANGE_LABEL}.csv"
+    OUTPUT_AIRODUMP_FILE="$PROCESSED_MERGED_DIR/airodump_${RANGE_LABEL}.csv"
     echo "${new_header_line},Source File" > "$OUTPUT_AIRODUMP_FILE"
 
     # Create a comma-separated string of indices to keep (e.g., "1,2,4,5")
