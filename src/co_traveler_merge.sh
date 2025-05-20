@@ -49,7 +49,7 @@ OUTPUT_WIGLE_FILE="$PROCESSED_MERGED_DIR/wigle_${RANGE_LABEL}.csv"
 echo "Merging WiGLE CSV files..."
 
 # Get the first wigle file
-first_file=$(find "$INPUT_KISMET_DIR" -type f -name "*_wigle.csv" | head -n 1)
+first_file=$(find "$PROCESSED_KISMET_DIR" -type f -name "*_wigle.csv" | head -n 1)
 if [ -z "$first_file" ]; then
     echo "No WiGLE CSV files found."
     # don't exit if none found
@@ -59,7 +59,7 @@ else
     echo "${proper_header},Source File" > "$OUTPUT_WIGLE_FILE"
 
     # Append data from each wigle file, skipping the first two rows (bad row and header row)
-    find "$INPUT_KISMET_DIR" -type f -name "*_wigle.csv" | while read file; do
+    find "$PROCESSED_KISMET_DIR" -type f -name "*_wigle.csv" | while read file; do
         tail -n +3 "$file" | awk -v src="$file" 'BEGIN {OFS=","} {print $0, src}'
     done >> "$OUTPUT_WIGLE_FILE"
 
@@ -70,7 +70,7 @@ fi
 # RANGE_LABEL is assumed to be set earlier in the script
 
 # Get header from the first file and remove carriage returns
-first_file=$(find "$INPUT_AIRODUMP_DIR" -type f -name "*.log.csv" | head -n 1)
+first_file=$(find "$PROCESSED_AIRODUMP_DIR" -type f -name "*.log.csv" | head -n 1)
 if [ -z "$first_file" ]; then
     echo "No airodump files found."
 else
@@ -103,7 +103,7 @@ else
     keep_indices_str=$(IFS=, ; echo "${keep_indices[*]}")
 
     # Process each file
-    for file in "$INPUT_AIRODUMP_DIR"/*.log.csv; do
+    for file in "$PROCESSED_AIRODUMP_DIR"/*.log.csv; do
         # Skip the header (tail -n +2) and remove carriage returns,
         # then use awk to print only the desired fields plus the source file at the end.
         tail -n +2 "$file" | tr -d '\r' | awk -F, -v OFS="," -v keep="$keep_indices_str" -v src="$file" '
