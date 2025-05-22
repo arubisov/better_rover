@@ -1,6 +1,7 @@
 data/
 GUIDE.md
 config.yaml
+whitelist.csv
 
 # macOS
 .DS_Store
