@@ -31,15 +31,16 @@ This script analyzes the merged data produced by the merge process and:
          <b>FURTHEST DETECTION DISTANCE</b> (in km).
 """
 
+import math
 import os
 import re
 import sys
-import math
-import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Self, Set, Optional, Tuple
+from typing import Optional, Self, Set, Tuple
+
+import numpy as np
+import pandas as pd
 
 from offline_map import Map
 

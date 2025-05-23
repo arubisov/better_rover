@@ -1,17 +1,15 @@
-import folium
-from folium import plugins
-import folium
-from folium.plugins import MarkerCluster
-from folium import FeatureGroup, LayerControl
-
-import re
 import html
-import pandas as pd
-import numpy as np
-from typing import Optional, List, Tuple
 import os
-from datetime import datetime
+import re
 import webbrowser
+from datetime import datetime
+from typing import List, Optional, Tuple
+
+import folium
+import numpy as np
+import pandas as pd
+from folium import FeatureGroup, LayerControl, plugins
+from folium.plugins import MarkerCluster
 
 
 class Map:
